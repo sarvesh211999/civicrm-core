@@ -2422,13 +2422,14 @@ LEFT JOIN  civicrm_contribution contribution ON ( componentPayment.contribution_
     $componentDetails = [];
 
     while ($dao->fetch()) {
+      CRM_Core_Error::debug_var('dao',$dao);
       $componentDetails['component'] = $dao->participant_id ? 'event' : 'contribute';
       $componentDetails['contact_id'] = $dao->contact_id;
       if ($dao->event_id) {
         $componentDetails['event'] = $dao->event_id;
       }
       if ($dao->participant_id) {
-        $componentDetails['participant'] = $dao->participant_id;
+        $componentDetails['participant'][] = $dao->participant_id;
       }
       if ($dao->membership_id) {
         if (!isset($componentDetails['membership'])) {
@@ -2734,6 +2735,7 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
     // 4) make ->_relatedObjects protected
     // 5) hone up the individual functions to not use rely on this having been called
     // 6) deprecate like mad
+  
     if ($loadAll) {
       $ids = array_merge($this->getComponentDetails($this->id), $ids);
       if (empty($ids['contact']) && isset($this->contact_id)) {
@@ -2799,6 +2801,7 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
     // These are probably no longer accessed from anywhere
     // @todo remove this line, after ensuring not used.
     $ids = $this->loadRelatedMembershipObjects($ids);
+
 
     if ($this->_component != 'contribute') {
       // we are in event mode
@@ -4665,13 +4668,13 @@ INNER JOIN civicrm_activity ON civicrm_activity_contact.activity_id = civicrm_ac
    */
   public static function sendMail(&$input, &$ids, $contributionID, &$values,
                                   $returnMessageText = FALSE) {
-
     $contribution = new CRM_Contribute_BAO_Contribution();
     $contribution->id = $contributionID;
     if (!$contribution->find(TRUE)) {
       throw new CRM_Core_Exception('Contribution does not exist');
     }
     $contribution->loadRelatedObjects($input, $ids, TRUE);
+
     // set receipt from e-mail and name in value
     if (!$returnMessageText) {
       list($values['receipt_from_name'], $values['receipt_from_email']) = self::generateFromEmailAndName($input, $contribution);
